@@ -1,0 +1,99 @@
+#
+# This file is part of the coreboot project.
+#
+# Copyright (C) 2012 Advanced Micro Devices, Inc.
+# Copyright (C) 2012 Rudolf Marek <r.marek@assembler.cz>
+# Copyright (C) 2016 Damien Zammit <damien@zamaudio.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+
+if BOARD_ASUS_F2A85_M_FAM10
+
+config BOARD_SPECIFIC_OPTIONS # dummy
+	def_bool y
+	select CPU_AMD_SOCKET_FM2_NON_AGESA
+	select DIMM_DDR3
+	select DIMM_REGISTERED
+	select DIMM_VOLTAGE_SET_SUPPORT
+	select NORTHBRIDGE_AMD_AMDFAM10
+	select SOUTHBRIDGE_AMD_SB900
+	select SUPERIO_ITE_IT8728F
+	select HAVE_OPTION_TABLE
+	select HAVE_PIRQ_TABLE
+	select HAVE_MP_TABLE
+	select HAVE_ACPI_TABLES
+	select BOARD_ROMSIZE_KB_8192
+	select ENABLE_APIC_EXT_ID
+	select PCI
+	select PCIEXP_PLUGIN_SUPPORT
+	select SB_HT_CHAIN_UNITID_OFFSET_ONLY
+
+config HT_CHAIN_END_UNITID_BASE
+	hex
+	default 0x1
+
+config HT_CHAIN_UNITID_BASE
+	hex
+	default 0x0
+
+config MAINBOARD_DIR
+	string
+	default "asus/f2a85-m_fam10"
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "F2A85-M"
+
+config BOOTBLOCK_MAINBOARD_INIT
+	string
+	default "mainboard/asus/f2a85-m_fam10/bootblock.c"
+
+config DCACHE_RAM_BASE
+	hex
+	default 0xc2000
+
+config DCACHE_RAM_SIZE
+	hex
+	default 0x1e000
+
+config APIC_ID_OFFSET
+	hex
+	default 0x0
+
+config HW_MEM_HOLE_SIZEK
+	hex
+	default 0x200000
+
+config MAX_CPUS
+	int
+	default 32
+
+config MAX_PHYSICAL_CPUS
+	int
+	default 1
+
+config MAINBOARD_POWER_ON_AFTER_POWER_FAIL
+	bool
+	default y
+
+config IRQ_SLOT_COUNT
+	int
+	default 13
+
+config ONBOARD_VGA_IS_PRIMARY
+	bool
+	default y
+
+config VGA_BIOS_ID
+	string
+	default "1002,9993"
+
+endif # BOARD_ASUS_F2A85_M_FAM10

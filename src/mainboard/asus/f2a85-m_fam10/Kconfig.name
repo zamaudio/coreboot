@@ -1,0 +1,2 @@
+config BOARD_ASUS_F2A85_M_FAM10
+	bool "F2A85-M(NONAGESA)"
