@@ -1261,6 +1261,7 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 	uint8_t write_iter;
 	uint8_t read_iter;
 	uint8_t check_antiphase;
+	uint8_t retry_rd_training;
 	uint8_t passing_read_dqs_delay_found;
 	uint8_t passing_write_dqs_delay_found;
 	uint16_t initial_write_dqs_delay[MAX_BYTE_LANES];
@@ -1288,6 +1289,19 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 
 	Errors = 0;
 	dual_rank = 0;
+
+	retry_rd_training = 0;
+	if (is_model10_1f()) {
+		/* Set receiver DQ delay to the lowest possible value for first training pass */
+		for (lane = 0; lane < 8; lane++) {
+			dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f001f | (lane << 8));
+			dword &= ~(0x1 << 8);	/* Rx4thStgEn = 0 */
+			dword |= 0x1 << 2;	/* RxBypass3rd4thStg = 1 */
+			Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f001f | (lane << 8), dword);
+		}
+	}
+
+retry_fam15h_dqs_rdwr_training:
 
 	/* There are four receiver pairs, loosely associated with chipselects.
 	 * This is essentially looping over each rank within each DIMM.
@@ -1446,9 +1460,31 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 				uint16_t region_center = (best_pos + (best_count / 2));
 
 				if (region_center < 16) {
-					printk(BIOS_WARNING, "TrainDQSRdWrPos: negative DQS recovery delay detected!"
-							"  Attempting to continue but your system may be unstable...\n");
-					region_center = 0;
+					if (is_model10_1f()) {
+						dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f001f | (lane << 8));
+						if (dword & (0x1 << 2)) {
+							printk(BIOS_INFO, "TrainDQSRdWrPos: enabling third DQ RX stage\n");
+							dword &= ~(0x1 << 2);	/* RxBypass3rd4thStg = 0 */
+							Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f001f | (lane << 8), dword);
+							retry_rd_training = 1;
+						}
+						else if (!(dword & (0x1 << 8))) {
+							printk(BIOS_INFO, "TrainDQSRdWrPos: enabling fourth DQ RX stage\n");
+							dword |= 0x1 << 8;	/* Rx4thStgEn = 1 */
+							Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f001f | (lane << 8), dword);
+							retry_rd_training = 1;
+						}
+						else {
+							printk(BIOS_WARNING, "TrainDQSRdWrPos: negative DQS recovery delay detected!"
+								"  Attempting to continue but your system may be unstable...\n");
+							region_center = 0;
+						}
+					}
+					else {
+						printk(BIOS_WARNING, "TrainDQSRdWrPos: negative DQS recovery delay detected!"
+								"  Attempting to continue but your system may be unstable...\n");
+						region_center = 0;
+					}
 				} else {
 					region_center -= 16;
 				}
@@ -1476,6 +1512,9 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 				/* Reprogram the Read DQS Timing Control register with the original settings */
 				write_dqs_read_data_timing_registers(initial_read_dqs_delay, dev, dct, dimm, index_reg);
 			}
+
+			if (retry_rd_training)
+				goto retry_fam15h_dqs_rdwr_training;
 
 			/* Determine location and length of longest consecutive string of write passing values
 			 * Output is stored in best_pos and best_count
