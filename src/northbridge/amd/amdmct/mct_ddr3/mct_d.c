@@ -8080,6 +8080,15 @@ void mct_SetDramConfigHi_D(struct MCTStatStruc *pMCTstat,
 static void mct_BeforeDQSTrain_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstatA)
 {
+	u32 val;
+
+	if (is_model10_1f()) {
+		/* Please power up my DIMMs */
+		val = Get_NB32(pDCTstatA->dev_dct, 0x210);
+		val = (val & ~0xffc00000) | (0x55 << 22);
+		Set_NB32(pDCTstatA->dev_dct, 0x210, val);
+	}
+
 	if (!is_fam15h()) {
 		u8 Node;
 		struct DCTStatStruc *pDCTstat;
