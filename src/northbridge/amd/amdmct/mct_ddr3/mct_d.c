@@ -1272,7 +1272,7 @@ uint32_t fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u
 		/* Assume UDIMM */
 		/* Fam15h Model10h BKDG Rev. 3.12 section 2.9.5.6.6 Table 32 */
 		if (MaxDimmsInstallable == 1) {
-			rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
 
 			if (MemClkFreq == 0x4) {
 				/* DDR3-667 */
@@ -1665,7 +1665,7 @@ uint32_t fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, 
 		/* Fam15h Model10h BKDG Rev. 3.12 section 2.9.5.6.6 Table 32 */
 		if (dimm_count == 1) {
 			/* 1 DIMM detected */
-			rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
 
 			if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)) {
 				/* DDR3-667 or DDR3-800 */
@@ -1871,7 +1871,7 @@ uint8_t fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, uint8_t dct)
 		/* UDIMM */
 		/* Fam15h Model10 BKDG Rev. 3.12 section 2.9.5.6.6 Table 32 */
 		if (MaxDimmsInstallable == 1) {
-			rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
 
 			if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 				|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
@@ -1887,7 +1887,7 @@ uint8_t fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, uint8_t dct)
 		} else if (MaxDimmsInstallable == 2) {
 			if (dimm_count == 1) {
 				/* 1 DIMM detected */
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
 
 				if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 					|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
