@@ -7410,10 +7410,10 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 		uint8_t dimm_count = pDCTstat->MAdimms[dct];
 		uint8_t rank_count_dimm0;
 		uint8_t rank_count_dimm1;
-		uint32_t odt_pattern_0;
-		uint32_t odt_pattern_1;
-		uint32_t odt_pattern_2;
-		uint32_t odt_pattern_3;
+		uint32_t odt_pattern_0 = 0;
+		uint32_t odt_pattern_1 = 0;
+		uint32_t odt_pattern_2 = 0;
+		uint32_t odt_pattern_3 = 0;
 		uint8_t write_odt_duration;
 		uint8_t read_odt_duration;
 		uint8_t write_odt_delay;
@@ -7503,7 +7503,40 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 			odt_pattern_2 = 0x00000000;
 			odt_pattern_3 = 0x00000000;
 		} else {
-			if (MaxDimmsInstallable == 2) {
+			if (is_model10_1f()) {
+				if (dimm_count == 1) {
+					/* 1 DIMM detected */
+					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
+					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					if (rank_count_dimm1 == 1) {
+						odt_pattern_0 = 0x00000000;
+						odt_pattern_1 = 0x00000000;
+						odt_pattern_2 = 0x00000000;
+						odt_pattern_3 = 0x00040000;
+					} else if (rank_count_dimm1 == 2) {
+						odt_pattern_0 = 0x00000000;
+						odt_pattern_1 = 0x00000000;
+						odt_pattern_2 = 0x00000000;
+						odt_pattern_3 = 0x08040000;
+					} else if (rank_count_dimm0 == 1) {
+						odt_pattern_0 = 0x00000000;
+						odt_pattern_1 = 0x00000000;
+						odt_pattern_2 = 0x00000000;
+						odt_pattern_3 = 0x00000001;
+					} else if (rank_count_dimm0 == 2) {
+						odt_pattern_0 = 0x00000000;
+						odt_pattern_1 = 0x00000000;
+						odt_pattern_2 = 0x00000000;
+						odt_pattern_3 = 0x00000201;
+					}
+				} else {
+					/* 2 DIMMs detected */
+					odt_pattern_0 = 0x00000000;
+					odt_pattern_1 = 0x01010404;
+					odt_pattern_2 = 0x00000000;
+					odt_pattern_3 = 0x09050605;
+				}
+			} else {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
 					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
@@ -7531,17 +7564,8 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 					odt_pattern_2 = 0x00000000;
 					odt_pattern_3 = 0x09030603;
 				}
-			} else {
-				/* FIXME
-				 * 3 DIMMs per channel UNIMPLEMENTED
-				 */
-				odt_pattern_0 = 0x00000000;
-				odt_pattern_1 = 0x00000000;
-				odt_pattern_2 = 0x00000000;
-				odt_pattern_3 = 0x00000000;
 			}
 		}
-
 		if (pDCTstat->Status & (1 << SB_LoadReduced)) {
 			/* TODO
 			 * Load reduced dimms UNIMPLEMENTED
