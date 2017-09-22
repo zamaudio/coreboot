@@ -62,6 +62,21 @@ static uint8_t is_fam15h(void)
 	return fam15h;
 }
 
+static inline uint8_t is_model10_1f(void)
+{
+	uint8_t model101f = 0;
+	uint32_t family;
+
+	family = cpuid_eax(0x80000001);
+	family = ((family & 0x0ff000) >> 12);
+
+	if (family >= 0x10 && family <= 0x1f)
+		/* Model 0x10 to 0x1f */
+		model101f = 1;
+
+	return model101f;
+}
+
 #define DQS_TRAIN_DEBUG 0
 // #define PRINT_PASS_FAIL_BITMAPS 1
 
@@ -2194,8 +2209,10 @@ void mct_TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		pDCTstat = pDCTstatA + Node;
 		if (pDCTstat->DCTSysLimit) {
-			if (is_fam15h()) {
+			if (is_fam15h() && !is_model10_1f()) {
 				TrainDQSReceiverEnCyc_D_Fam15(pMCTstat, pDCTstat);
+			} else if (is_fam15h() && is_model10_1f()) {
+				TrainDQSRdWrPos_D_Fam10(pMCTstat, pDCTstat);
 			} else {
 				TrainDQSRdWrPos_D_Fam10(pMCTstat, pDCTstat);
 				for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
