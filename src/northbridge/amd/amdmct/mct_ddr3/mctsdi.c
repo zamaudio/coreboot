@@ -266,11 +266,11 @@ uint8_t fam15_rttwr(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, ui
 					term = 0x0;
 				} else if (MaxDimmsInstallable == 2) {
 					if ((number_of_dimms == 2) && (frequency_index >= 0x12)) {
-						term = 0x1;
+						term = 0x1; // 60 Ohms
 					} else if (number_of_dimms == 1) {
 						term = 0x0;
 					} else {
-						term = 0x2;
+						term = 0x2; // 120 Ohms
 					}
 				}
 			} else {
@@ -646,28 +646,28 @@ uint8_t fam15_rttnom(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, u
 					if ((frequency_index == 0x4)
 							|| (frequency_index == 0x6)
 							|| (frequency_index == 0xa))
-						term = 0x4;
+						term = 0x2; // 120 Ohms
 					else if (frequency_index == 0xe)
-						term = 0x3;
+						term = 0x1; // 60 Ohms
 					else if (frequency_index >= 0x12)
-						term = 0x2;
+						term = 0x3; // 40 Ohms
 				}
 				if (MaxDimmsInstallable == 2) {
 					if (number_of_dimms == 1) {
 						if (frequency_index <= 0xa) {
-							term = 0x4;
+							term = 0x2; // 120 Ohms
 						} else if (frequency_index <= 0xe) {
-							term = 0x3;
+							term = 0x1; // 60 Ohms
 						} else {
-							term = 0x2;
+							term = 0x3; // 40 Ohms
 						}
 					} else {
 						if (frequency_index <= 0xa) {
-							term = 0x2;
+							term = 0x3; // 40 Ohms
 						} else if (frequency_index <= 0xe) {
-							term = 0x1;
+							term = 0x5; // 30 Ohms
 						} else {
-							term = 0x0;
+							term = 0x4; // 20 Ohms
 						}
 					}
 				}
