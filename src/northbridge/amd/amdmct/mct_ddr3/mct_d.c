@@ -2974,6 +2974,20 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		dword &= ~(0x1 << 8);					/* ODTSEn = 0 */
 		Set_NB32_DCT(dev, dct, 0xa4, dword);			/* DRAM Controller Temperature Throttle */
 
+		if (is_model10_1f()) {
+			dword = Get_NB32_DCT(dev, dct, 0xa8);		/* DRAM Misc2 */
+			dword |= (0x1 << 31);				/* PerRankTimingEn = 1 */
+			Set_NB32_DCT(dev, dct, 0xa8, dword);
+
+			dword = Get_NB32_index_wait_DCT(dev, 0, 0x98, 0x00000008);
+			dword &= ~(0x1 << 2);				/* CH0 TrNibbleSel = 0 */
+			Set_NB32_index_wait_DCT(dev, 0, 0x98, 0x00000008, dword);
+
+			dword = Get_NB32_index_wait_DCT(dev, 1, 0x98, 0x00000008);
+			dword &= ~(0x1 << 2);				/* CH1 TrNibbleSel = 0 */
+			Set_NB32_index_wait_DCT(dev, 1, 0x98, 0x00000008, dword);
+		}
+
 		dword = Get_NB32_DCT(dev, dct, 0x110);			/* DRAM Controller Select Low */
 		dword &= ~(0x1 << 2);					/* DctSelIntLvEn = 0 */
 		Set_NB32_DCT(dev, dct, 0x110, dword);			/* DRAM Controller Select Low */
