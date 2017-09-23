@@ -427,8 +427,8 @@ void SetTargetFreq(struct MCTStatStruc *pMCTstat,
 	ExitSelfRefresh(pMCTstat, pDCTstat);
 
 	if (is_fam15h()) {
-		if ((package_type == PT_C3) || (package_type == PT_GR)) {
-			/* Socket C32 or G34 */
+		if ((package_type == PT_C3) || (package_type == PT_GR) || (package_type == PT_FM2)) {
+			/* Socket C32 or G34 or FM2 */
 			/* Program F2x[1, 0]90[DisDllShutDownSR]=0. */
 			if (pDCTstat->DIMMValidDCT[0]) {
 				dword = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x90);
