@@ -2206,10 +2206,8 @@ void mct_TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		pDCTstat = pDCTstatA + Node;
 		if (pDCTstat->DCTSysLimit) {
-			if (is_fam15h() && !is_model10_1f()) {
+			if (is_fam15h()) {
 				TrainDQSReceiverEnCyc_D_Fam15(pMCTstat, pDCTstat);
-			} else if (is_fam15h() && is_model10_1f()) {
-				TrainDQSRdWrPos_D_Fam10(pMCTstat, pDCTstat);
 			} else {
 				TrainDQSRdWrPos_D_Fam10(pMCTstat, pDCTstat);
 				for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
