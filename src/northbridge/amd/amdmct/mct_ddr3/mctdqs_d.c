@@ -77,9 +77,6 @@ static inline uint8_t is_model10_1f(void)
 	return model101f;
 }
 
-#define DQS_TRAIN_DEBUG 0
-// #define PRINT_PASS_FAIL_BITMAPS 1
-
 void print_debug_dqs(const char *str, u32 val, u8 level)
 {
 #if DQS_TRAIN_DEBUG > 0

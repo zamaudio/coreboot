@@ -21,6 +21,7 @@
 #define MCT_D_H
 
 #define DQS_TRAIN_DEBUG 0
+#define  PRINT_PASS_FAIL_BITMAPS 0
 
 #include <inttypes.h>
 #include <northbridge/amd/amdfam10/raminit.h>
