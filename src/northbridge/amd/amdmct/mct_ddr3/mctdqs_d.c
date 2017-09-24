@@ -507,10 +507,6 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 				/* 2.10.5.8.4 (2 B)
 				 * Write the DRAM training pattern to the base test address */
 				WriteDQSTestPattern_D(pMCTstat, pDCTstat, TestAddr << 8);
-				/* Flush caches */
-				SetTargetWTIO_D(TestAddr);
-				FlushDQSTestPattern_D(pDCTstat, TestAddr << 8);
-				ResetTargetWTIO_D();
 
 				/* Read current settings of other (previously trained) lanes */
 				read_dqs_read_data_timing_registers(current_read_dqs_delay, dev, dct, dimm, index_reg);
@@ -535,11 +531,6 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 					/* 2.10.5.8.4 (2 A ii)
 					 * Read the DRAM training pattern from the test address
 					 */
-					/* Flush caches */
-					SetTargetWTIO_D(TestAddr);
-					FlushDQSTestPattern_D(pDCTstat, TestAddr << 8);
-					ResetTargetWTIO_D();
-
 					bytelane_test_results = CompareDQSTestPattern_D(pMCTstat, pDCTstat, TestAddr << 8) & 0xff; /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
 
 					/* 2.10.5.8.4 (2 A iii)
