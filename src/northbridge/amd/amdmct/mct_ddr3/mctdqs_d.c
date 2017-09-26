@@ -407,6 +407,7 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 	uint8_t dimm;
 	uint8_t lane;
 	uint32_t Errors;
+	uint32_t dword;
 	uint32_t TestAddr;
 	uint8_t Receiver;
 	uint8_t bytelane_test_results = 0xff;
@@ -430,14 +431,53 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 	uint8_t best_pos = 0;
 	uint8_t best_count = 0;
 
+	u32 addr;
+	u32 cr4;
+	u32 lo, hi;
+	u32 PatternBuffer[304];	/* 288 + 16 */
+	u8 _Wrap32Dis = 0, _SSE2 = 0;
+
 	uint32_t index_reg = 0x98;
 	uint32_t dev = pDCTstat->dev_dct;
+
+	cr4 = read_cr4();
+	if (cr4 & (1<<9)) {
+		_SSE2 = 1;
+	}
+	cr4 |= (1<<9);		/* OSFXSR enable SSE2 */
+	write_cr4(cr4);
+
+	addr = HWCR;
+	_RDMSR(addr, &lo, &hi);
+	if (lo & (1<<17)) {
+		_Wrap32Dis = 1;
+	}
+	lo |= (1<<17);		/* HWCR.wrap32dis */
+	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
+
+	SetupDqsPattern_D(pMCTstat, pDCTstat, PatternBuffer);
+
+	pDCTstat->Direction = DQS_READDIR;
 
 	/* Calculate and program MaxRdLatency */
 	Calc_SetMaxRdLatency_D_Fam15(pMCTstat, pDCTstat, dct, 0);
 
 	Errors = 0;
 	dual_rank = 0;
+
+	/* Set receiver DQ delay to the lowest possible value for first training pass */
+	for (lane = 0; lane < 8; lane++) {
+		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f001f | lane << 8);
+		dword &= ~(0x1 << 8);	/* Rx4thStgEn = 0 */
+		dword |= 0x1 << 2;	/* RxBypass3rd4thStg = 1 */
+		Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f001f | lane << 8, dword);
+	}
+	dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f0f1f);
+	dword &= ~(0x1 << 8);	/* Rx4thStgEn = 0 */
+	dword |= 0x1 << 2;	/* RxBypass3rd4thStg = 1 */
+	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f0f1f, dword);
+
+	lane = lane_start;
 
 	/* There are four receiver pairs, loosely associated with chipselects.
 	 * This is essentially looping over each rank within each DIMM.
@@ -470,7 +510,6 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 		SetUpperFSbase(TestAddr);	/* fs:eax = far ptr to target */
 
 		/* Initialize variables */
-		lane = lane_start;
 		passing_dqs_delay_found[lane] = 0;
 
 		if ((Receiver & 0x1) == 0) {
@@ -523,6 +562,11 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 				/* 2.10.5.8.4 (2 A ii)
 				 * Read the DRAM training pattern from the test address
 				 */
+				/* Flush caches */
+				SetTargetWTIO_D(TestAddr);
+				FlushDQSTestPattern_D(pDCTstat, TestAddr << 8);
+				ResetTargetWTIO_D();
+
 				bytelane_test_results = CompareDQSTestPattern_D(pMCTstat, pDCTstat, TestAddr << 8) & 0xff; /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
 
 				/* 2.10.5.8.4 (2 A iii)
@@ -719,6 +763,18 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 			}
 		}
 #endif
+	}
+
+	if (!_Wrap32Dis) {
+		addr = HWCR;
+		_RDMSR(addr, &lo, &hi);
+		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		_WRMSR(addr, lo, hi);
+	}
+	if (!_SSE2) {
+		cr4 = read_cr4();
+		cr4 &= ~(1<<9);		/* restore cr4.OSFXSR */
+		write_cr4(cr4);
 	}
 
 	/* Return 1 on success, 0 on failure */
