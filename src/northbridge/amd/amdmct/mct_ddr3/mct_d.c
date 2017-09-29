@@ -5065,19 +5065,21 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	DramConfigMisc2 = Get_NB32_DCT(dev, dct, 0xa8);		/* Dram Miscellaneous 2 */
 	DramControl = Get_NB32_DCT(dev, dct, 0x78);		/* Dram Control */
 
-	/* FIXME: Skip mct_checkForDxSupport */
-	/* REV_CALL mct_DoRdPtrInit if not Dx */
-	if (pDCTstat->LogicalCPUID & AMD_DR_Bx)
-		val = 5;
-	else
-		val = 6;
-	DramControl &= ~0xFF;
-	DramControl |= val;	/* RdPtrInit = 6 for Cx CPU */
+	if (!is_model10_1f()) {
+		/* FIXME: Skip mct_checkForDxSupport */
+		/* REV_CALL mct_DoRdPtrInit if not Dx */
+		if (pDCTstat->LogicalCPUID & AMD_DR_Bx)
+			val = 5;
+		else
+			val = 6;
+		DramControl &= ~0xFF;
+		DramControl |= val;	/* RdPtrInit = 6 for Cx CPU */
 
-	if (mctGet_NVbits(NV_CLKHZAltVidC3))
-		DramControl |= 1<<16; /* check */
+		if (mctGet_NVbits(NV_CLKHZAltVidC3))
+			DramControl |= 1<<16; /* check */
 
-	DramControl |= 0x00002A00;
+		DramControl |= 0x00002A00;
+	}
 
 	/* FIXME: Skip for Ax versions */
 	/* callback not required - if (!mctParityControl_D()) */
@@ -5159,7 +5161,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 		val = 0x0f; /* recommended setting (default) */
 	DramConfigHi |= val << 24;
 
-	if (pDCTstat->LogicalCPUID & (AMD_DR_Dx | AMD_DR_Cx | AMD_DR_Bx | AMD_FAM15_ALL))
+	if (pDCTstat->LogicalCPUID & (AMD_DR_Dx | AMD_DR_Cx | AMD_DR_Bx))
 		DramConfigHi |= 1 << DcqArbBypassEn;
 
 	/* Build MemClkDis Value from Dram Timing Lo and
