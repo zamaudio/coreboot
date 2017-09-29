@@ -516,8 +516,11 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 			/* Even rank of DIMM */
 			memset(dqs_results_array, 0, sizeof(dqs_results_array));
 
+
 			/* Read initial read / write DQS delays */
 			read_dqs_write_timing_control_registers(initial_write_dqs_delay, dev, dct, dimm, index_reg);
+			for (uint8_t l = 0; l < 8; l++)
+				printk(BIOS_DEBUG, "\tXXX initial_write_dqs_delay[%d] = %x\n", l, initial_write_dqs_delay[l]);
 			read_dqs_read_data_timing_registers(initial_read_dqs_delay, dev, dct, dimm, index_reg);
 
 			/* Read current settings of other (previously trained) lanes */
@@ -573,7 +576,8 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 				 * Record pass / fail status
 				 */
 				dqs_results_array[Receiver & 0x1][current_write_data_delay[lane] - initial_write_dqs_delay[lane]][current_read_dqs_delay[lane] + 16] = (!!(bytelane_test_results & (1 << lane)));
-				//printk(BIOS_DEBUG, "WR=%x RD=%x result=%02x\n", current_write_data_delay[lane], current_read_dqs_delay[lane], bytelane_test_results);
+				if (bytelane_test_results)
+					printk(BIOS_DEBUG, "FOUND!!! WR=%x RD=%x result=%02x\n", current_write_data_delay[lane], current_read_dqs_delay[lane], bytelane_test_results);
 			}
 		}
 
