@@ -399,6 +399,7 @@ static void write_dqs_write_data_timing_registers(uint16_t* delay, uint32_t dev,
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x3 | (dimm << 8), dword);
 }
 
+#if 0
 /* DQS Position Training Fam15 Model10-1f
  */
 static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
@@ -784,6 +785,7 @@ static uint8_t TrainDQSRdWrPos_D_Model101f(struct MCTStatStruc *pMCTstat,
 	/* Return 1 on success, 0 on failure */
 	return !Errors;
 }
+#endif
 
 /* DQS Position Training
  * Algorithm detailed in the Fam10h BKDG Rev. 3.62 section 2.8.9.9.3
@@ -1528,7 +1530,7 @@ void read_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
 	Set_NB32_DCT(dev, dct, 0x258, dword);
 
 	dword = Get_NB32_DCT(dev, dct, 0x250);
-	dword |= (0x1 << 3);				/* ResetAllErr = 1 */
+	//dword |= (0x1 << 3);				/* ResetAllErr = 1 */
 	dword &= ~(0x1 << 4);				/* StopOnErr = stop_on_error */
 	dword |= (stop_on_error & 0x1) << 4;
 	dword &= ~(0x3 << 8);				/* CmdTgt = 1 (Alternate between Target A and Target B) */
@@ -1625,7 +1627,7 @@ void write_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
 	Set_NB32_DCT(dev, dct, 0x258, dword);
 
 	dword = Get_NB32_DCT(dev, dct, 0x250);
-	dword |= (0x1 << 3);				/* ResetAllErr = 1 */
+	//dword |= (0x1 << 3);				/* ResetAllErr = 1 */
 	dword &= ~(0x1 << 4);				/* StopOnErr = stop_on_error */
 	dword |= (stop_on_error & 0x1) << 4;
 	dword &= ~(0x3 << 8);				/* CmdTgt = 1 (Alternate between Target A and Target B) */
@@ -1745,9 +1747,15 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 				 */
 				write_dqs_write_data_timing_registers(current_write_data_delay, dev, dct, dimm, index_reg);
 
+				/* Set ResetAllErrors = 1 */
+				dword = Get_NB32_DCT(dev, dct, 0x250);
+				dword |= (0x1 << 3);
+				Set_NB32_DCT(dev, dct, 0x250, dword);
+
 				/* 2.10.5.8.4 (2 B)
 				 * Write the DRAM training pattern to the test address
 				 */
+
 				write_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver, lane, 0);
 
 				/* Read current settings of other (previously trained) lanes */
@@ -1773,17 +1781,18 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 					/* 2.10.5.8.4 (2 A ii)
 					 * Read the DRAM training pattern from the test address
 					 */
-					read_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver, lane, ((check_antiphase == 0)?1:0));
-
+					//read_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver, lane, ((check_antiphase == 0)?1:0));
+					read_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver, lane, 0);
+					/* Check for early abort before analyzing per-nibble status
 					if (check_antiphase == 0) {
-						/* Check for early abort before analyzing per-nibble status */
 						dword = Get_NB32_DCT(dev, dct, 0x264);
 						if ((dword & 0x1ffffff) != 0) {
 							print_debug_dqs("\t\t\t\t\tTrainDQSRdWrPos: 162 early abort: F2x264 ", dword, 6);
-							dqs_results_array[Receiver & 0x1][lane - lane_start][current_write_data_delay[lane] - initial_write_dqs_delay[lane]][current_read_dqs_delay[lane] + 16] = 0;	/* Fail */
+							dqs_results_array[Receiver & 0x1][lane - lane_start][current_write_data_delay[lane] - initial_write_dqs_delay[lane]][current_read_dqs_delay[lane] + 16] = 0;	// Fail
 							continue;
 						}
 					}
+					*/
 
 					/* 2.10.5.8.4 (2 A iii)
 					 * Record pass / fail status
@@ -1802,6 +1811,11 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 						else
 							dqs_results_array[Receiver & 0x1][lane - lane_start][current_write_data_delay[lane] - initial_write_dqs_delay[lane]][16 - (32 - current_read_dqs_delay[lane])] = 1;	/* Pass */
 					}
+
+					/* Set ResetAllErrors = 1 */
+					dword = Get_NB32_DCT(dev, dct, 0x250);
+					dword |= (0x1 << 3);
+					Set_NB32_DCT(dev, dct, 0x250, dword);
 				}
 			}
 
@@ -2094,6 +2108,16 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 
 			/* 2.10.5.8.3 (2) */
 			read_dqs_receiver_enable_control_registers(initial_phy_phase_delay, dev, dct, dimm, index_reg);
+			/*
+			initial_phy_phase_delay[0] = 0x9d;
+			initial_phy_phase_delay[1] = 0xa0;
+			initial_phy_phase_delay[2] = 0xa3;
+			initial_phy_phase_delay[3] = 0xaa;
+			initial_phy_phase_delay[4] = 0xae;
+			initial_phy_phase_delay[5] = 0xb6;
+			initial_phy_phase_delay[6] = 0xc2;
+			initial_phy_phase_delay[7] = 0xcb;
+			*/
 
 			/* Reset the read data timing registers to 1UI before calculating MaxRdLatency */
 			for (internal_lane = 0; internal_lane < MAX_BYTE_LANES; internal_lane++)
@@ -2130,7 +2154,8 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 
 					/* 2.10.5.8.3 (4 B) DQS Position training */
 					if (is_model10_1f()) {
-						dqs_results_array[current_phy_phase_delay[lane]] = TrainDQSRdWrPos_D_Model101f(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane);
+						//dqs_results_array[current_phy_phase_delay[lane]] = TrainDQSRdWrPos_D_Model101f(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane);
+						dqs_results_array[current_phy_phase_delay[lane]] = TrainDQSRdWrPos_D_Fam15(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane, lane + 1);
 					} else {
 						dqs_results_array[current_phy_phase_delay[lane]] = TrainDQSRdWrPos_D_Fam15(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane, lane + 1);
 					}
@@ -2190,7 +2215,8 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 						/* Update hardware registers with final values */
 						write_dqs_receiver_enable_control_registers(current_phy_phase_delay, dev, dct, dimm, index_reg);
 						if (is_model10_1f()) {
-							TrainDQSRdWrPos_D_Model101f(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane);
+							//TrainDQSRdWrPos_D_Model101f(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane);
+							TrainDQSRdWrPos_D_Fam15(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane, lane + 1);
 						} else {
 							TrainDQSRdWrPos_D_Fam15(pMCTstat, pDCTstat, dct, Receiver, Receiver + 2, lane, lane + 1);
 						}

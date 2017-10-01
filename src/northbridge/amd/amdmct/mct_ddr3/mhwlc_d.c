@@ -311,7 +311,7 @@ uint8_t AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
 	 * to the target DIMM. */
 	for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
 		setWLByteDelay(pDCTstat, dct, ByteLane, dimm, 1, pass, lane_count);
-		printk(BIOS_DEBUG, "\tXXX lane = %d WLGrossDelay = %x\n", ByteLane, pDCTData->WLGrossDelay[index+ByteLane]);
+		printk(BIOS_DEBUG, "\tXXX lane = %d WrDQS = %x\n", ByteLane, (pDCTData->WLGrossDelay[index+ByteLane] << 5) | (pDCTData->WLFineDelay[index+ByteLane]));
 	}
 
 	/* 6. Configure DRAM Phy Control Register so that the phy stops driving

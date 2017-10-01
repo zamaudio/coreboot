@@ -35,6 +35,21 @@ static uint8_t is_fam15h(void)
 	return fam15h;
 }
 
+static inline uint8_t is_model10_1f(void)
+{
+	uint8_t model101f = 0;
+	uint32_t family;
+
+	family = cpuid_eax(0x80000001);
+	family = ((family & 0x0ff000) >> 12);
+
+	if (family >= 0x10 && family <= 0x1f)
+		/* Model 0x10 to 0x1f */
+		model101f = 1;
+
+	return model101f;
+}
+
 static void SetEccWrDQS_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat)
 {
 	u8 ByteLane, DimmNum, OddByte, Addl_Index, Channel;
@@ -237,13 +252,13 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 		if (pDCTstat->TargetFreq > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 			/* 8.Prepare the memory subsystem for the target MEMCLK frequency.
 			 * NOTE: BIOS must program both DCTs to the same frequency.
-			 * NOTE: Fam15h steps the frequency, Fam10h slams the frequency.
+			 * NOTE: Fam15h steps the frequency, Fam10h and TN slams the frequency.
 			 */
 			uint8_t global_phy_training_status = 0;
 			final_target_freq = pDCTstat->TargetFreq;
 
 			while (pDCTstat->Speed != final_target_freq) {
-				if (is_fam15h())
+				if (is_fam15h() && !is_model10_1f())
 					pDCTstat->TargetFreq = fam15h_next_highest_memclk_freq(pDCTstat->Speed);
 				else
 					pDCTstat->TargetFreq = final_target_freq;

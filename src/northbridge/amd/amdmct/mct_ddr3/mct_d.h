@@ -20,8 +20,8 @@
 #ifndef MCT_D_H
 #define MCT_D_H
 
-#define DQS_TRAIN_DEBUG 0
-#define  PRINT_PASS_FAIL_BITMAPS 0
+#define DQS_TRAIN_DEBUG 7
+#define  PRINT_PASS_FAIL_BITMAPS 1
 
 #include <inttypes.h>
 #include <northbridge/amd/amdfam10/raminit.h>
